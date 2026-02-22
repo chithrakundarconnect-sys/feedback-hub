@@ -35,7 +35,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 /* 🔐 ADMIN EMAIL (IMPORTANT) */
-const ADMIN_EMAIL = 'admin@gmail.com'; // replace with your admin email
+const ADMIN_EMAIL = 'admin@gmail.com';
 
 type Feedback = {
   id: string;
@@ -51,33 +51,29 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
 
- /* 🔐 Stable Admin Protection */
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, (user) => {
+  /* 🔐 Stable Admin Protection */
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
 
-    // Not logged in
-    if (!user) {
-      router.replace('/admin/login');
-      return;
-    }
+      if (!user) {
+        router.replace('/admin/login');
+        return;
+      }
 
-    // Wait until Firebase fully loads user
-    if (!user.email) return;
+      if (!user.email) return;
 
-    // Only admin allowed
-    if (user.email !== ADMIN_EMAIL) {
-      signOut(auth);
-      alert('Access denied: Admin only');
-      router.replace('/admin/login');
-      return;
-    }
+      if (user.email !== ADMIN_EMAIL) {
+        signOut(auth);
+        alert('Access denied: Admin only');
+        router.replace('/admin/login');
+        return;
+      }
 
-    // Auth success
-    setAuthLoading(false);
-  });
+      setAuthLoading(false);
+    });
 
-  return () => unsubscribe();
-}, [router]);
+    return () => unsubscribe();
+  }, [router]);
 
   /* 🔄 Real-time Firestore */
   useEffect(() => {
@@ -114,7 +110,7 @@ useEffect(() => {
     router.replace('/admin/login');
   };
 
-  /* 🗑 DELETE FEEDBACK (NEW FEATURE) */
+  /* 🗑 DELETE FEEDBACK */
   const handleDelete = async (id: string) => {
     const confirmDelete = confirm('Are you sure you want to delete this feedback?');
     if (!confirmDelete) return;
@@ -127,7 +123,6 @@ useEffect(() => {
     }
   };
 
-  /* ⏳ Auth loading screen */
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -138,7 +133,8 @@ useEffect(() => {
 
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
-      {/* Sidebar */}
+
+      {/* Sidebar (Desktop Only) */}
       <aside className="hidden border-r bg-muted/40 lg:block">
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center border-b px-6">
@@ -177,12 +173,27 @@ useEffect(() => {
 
       {/* Main */}
       <main className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b px-6">
+
+        {/* ⭐⭐⭐ MOBILE FIX HEADER ⭐⭐⭐ */}
+        <header className="flex h-16 items-center justify-between border-b px-4 md:px-6">
           <div>
-            <h1 className="text-xl font-semibold">Feedback Dashboard</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-lg md:text-xl font-semibold">Feedback Dashboard</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">
               All user submitted feedback (real-time)
             </p>
+          </div>
+
+          {/* MOBILE SETTINGS + LOGOUT */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <Link href="/admin/settings">
+              <Button variant="outline" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
+
+            <Button variant="destructive" size="icon" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </header>
 
@@ -232,13 +243,12 @@ useEffect(() => {
                     )}
                   </CardContent>
 
-                  {/* ⭐ UPDATED FOOTER */}
-                 <CardFooter className="flex gap-2">
-                 <Link href={`/admin/feedback/${item.id}`} className="w-full">
-                 <Button variant="outline" size="sm" className="w-full">
-                View Details
-                </Button>
-                </Link>
+                  <CardFooter className="flex gap-2">
+                    <Link href={`/admin/feedback/${item.id}`} className="w-full">
+                      <Button variant="outline" size="sm" className="w-full">
+                        View Details
+                      </Button>
+                    </Link>
 
                     <Button
                       variant="destructive"
